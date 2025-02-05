@@ -101,7 +101,7 @@ def load_index(filename):
 
 # Main execution
 if __name__ == "__main__":
-    filepath = "products.jsonl"  # Updated to correct JSONL file
+    filepath = "data_2/products.jsonl"  # Updated to correct JSONL file
     documents = load_jsonl(filepath)
 
     STOPWORDS = {"the", "a", "an", "in", "on", "for", "and", "to", "of", "with"}  # Example stopwords
@@ -133,10 +133,10 @@ if __name__ == "__main__":
             json.dump(python_objects, f, indent=4)
 
 
-    save_index(title_index, "title_index.json")
-    save_index(description_index, "description_index.json")
-    save_index(positional_title_index, "positional_title_index.json")
-    save_index(positional_description_index, "positional_description_index.json")
-    save_index(review_index, "review_index.json")
+    save_index(title_index, "data_2/title_index.json")
+    save_index(description_index, "data_2/description_index.json")
+    save_index(positional_title_index, "data_2/positional_title_index.json")
+    save_index(positional_description_index, "data_2/positional_description_index.json")
+    save_index(review_index, "data_2/review_index.json")
 
     print("Indexing complete! Saved all indexes.")

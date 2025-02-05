@@ -91,7 +91,7 @@ class WebCrawler:
 
     def save_results(self):
         """Save the results to a JSON file."""
-        with open("results.json", "w", encoding="utf-8") as f:
+        with open("data_1/results.json", "w", encoding="utf-8") as f:
             json.dump(self.results, f, ensure_ascii=False, indent=4)
 
 

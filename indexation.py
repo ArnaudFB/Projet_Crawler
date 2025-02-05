@@ -92,7 +92,7 @@ def save_index(index, filename):
 
 
 def load_index(filename):
-    """Load index from a JSON file."""
+    """Load index from a JSON file. """
     if os.path.exists(filename):
         with open(filename, "r", encoding="utf-8") as f:
             return json.load(f)

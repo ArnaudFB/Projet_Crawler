@@ -170,6 +170,15 @@ def calculate_final_score(query_tokens, url, alpha=1, beta=.5, gamma=1.5):
     exact_title_score = exact_title_match(query_tokens, url)
     return alpha*bm25_score + beta*review_score + gamma*exact_title_score
 
+def get_tile_from_url(url):
+    for product in products_data:
+        if product["url"] == url:
+            return product["title"]
+
+def get_description_from_url(url):
+    for product in products_data:
+        if product["url"] == url:
+            return product["description"]
 
 # Search function
 def search(query):
@@ -179,9 +188,9 @@ def search(query):
     bm25 = BM25(indexes, k1=1.5, b=0.75)
     scored_docs = {doc: bm25.score(doc, expanded_query) for doc in filtered_docs}
     ranked_results = sorted(scored_docs.items(), key=lambda x: x[1], reverse=True)
-
     # Format results
-    results = [{"title": doc, "score": score} for doc, score in ranked_results]
+    results = [{"Titre": get_tile_from_url(doc), "URL": doc, "Description":get_description_from_url(doc), "score": score} for doc, score in ranked_results]
+
     return {
         "total_documents": len(description_index),
         "filtered_documents": len(filtered_docs),
@@ -190,5 +199,5 @@ def search(query):
 
 
 # Example usage
-query = ("leather sneakers")
+query = ("Classic leather sneakers")
 print(json.dumps(search(query), indent=4))

@@ -8,8 +8,8 @@ from nltk.tokenize import word_tokenize
 from math import log
 from nltk.corpus import stopwords
 
-# Load necessary data
 def load_json(filename):
+    """Load JSON file."""
     with open(filename, 'r', encoding='utf-8') as file:
         return json.load(file)
 
@@ -21,7 +21,6 @@ origin_synonyms = load_json('data_3/origin_synonyms.json')
 review_index = load_json('data_3/reviews_index.json')
 title_index = load_json('data_3/title_index.json')
 
-# Load JSONL file
 def load_jsonl(filepath):
     """Load JSONL file and return a list of dictionaries."""
     with open(filepath, "r", encoding="utf-8") as file:
@@ -38,15 +37,16 @@ indexes = {
     "title_index": title_index
 }
 
-# Get stopwords from NLTK
+
 def get_stopwords():
+    """Get stopwords from NLTK."""
     return set(stopwords.words('english'))
 
 # Initialize the stemmer
 stemmer = PorterStemmer()
 
-# Tokenize a text
 def tokenize(text):
+    """Tokenize a text by removing punctuation and converting to lowercase."""
     # Remove non-alphanumeric characters (except spaces)
     text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
     # Tokenize the text
@@ -58,16 +58,16 @@ def tokenize(text):
     clean_tokens = [token for token in tokens if token not in stopwords and token not in punctuation]
     return clean_tokens
 
-# Expand query using synonyms
 def expand_query(query_tokens, synonym_dict):
+    """Expand query tokens using synonyms."""
     expanded = set(query_tokens)
     for token in query_tokens:
         if token in synonym_dict:
             expanded.update(synonym_dict[token])
     return list(expanded)
 
-# Filter documents by tokens
 def filter_documents(index, query_tokens, match_all=False):
+    """Filter documents by tokens in the index."""
     relevant_docs = set()
     for token in query_tokens:
         if token in index:
@@ -80,8 +80,8 @@ def filter_documents(index, query_tokens, match_all=False):
                     relevant_docs.intersection_update(index[token])
     return list(relevant_docs)
 
-# Calculate the doc length for each doc (title + description)
 def calc_doc_length(products):
+    """Calculate the doc length for each doc (title + description)."""
     doc_lengths = {}
     for product in products:
         url = product['url']
@@ -90,8 +90,8 @@ def calc_doc_length(products):
         doc_lengths[url] = len(tokenize(title)) + len(tokenize(description))
     return doc_lengths
 
-# Calculate token frequency (with weights) in a document for some indexes
-def get_token_frequency(token, url, indexes):
+def get_token_frequency(token, url):
+    """Calculate token frequency (with weights) in a document for some indexes."""
 
     weights = {
         "title_index": 5,
@@ -107,7 +107,7 @@ def get_token_frequency(token, url, indexes):
             continue
 
         value = index[token]
-
+        # Can be a dict or a list depending on the current index
         if isinstance(value, dict):
             freq = len(value.get(url, []))
         elif isinstance(value, list):
@@ -137,6 +137,7 @@ class BM25:
             for token in query_tokens:
                 if token in index:
                     value = index[token]
+                    # Can be a dict or a list depending on the current index
                     if isinstance(value, dict):
                         docs.update(value.keys())
                     elif isinstance(value, list):
@@ -145,25 +146,27 @@ class BM25:
                         pass
                     df = len(docs)
                     idf = log((self.N - df + 0.5) / (df + 0.5) + 1)
-                    tf = get_token_frequency(token, doc, self.indexes)
+                    tf = get_token_frequency(token, doc)
                     doc_length = self.doc_lengths.get(doc, 1)
                     score += idf * ((tf * (self.k1 + 1)) / (
                                 tf + self.k1 * (1 - self.b + self.b * (doc_length / self.avg_doc_length))))
         return score
 
-# Add a bonus if good review on URL
 def get_bonus_review(url):
+    """Add a bonus if good review on URL."""
     mean_mark = review_index[url].get("mean_mark", 0)
     return mean_mark / 5
 
-# Add a bonus if exact title match
+
 def exact_title_match(query_tokens, url):
+    """Add a bonus if exact title match."""
     title = products_data[url].get("title", "")
     tokens = set(tokenize(title))
     query_tokens = set(query_tokens)
     return 1 if query_tokens == tokens and len(tokens)>0 else 0
 
 def calculate_final_score(query_tokens, url, alpha=1, beta=.5, gamma=1.5):
+    """Calculate final score for a given URL."""
     bm25 = BM25(indexes)
     bm25_score = bm25.score(url, query_tokens)
     review_score = get_bonus_review(url)
@@ -171,17 +174,20 @@ def calculate_final_score(query_tokens, url, alpha=1, beta=.5, gamma=1.5):
     return alpha*bm25_score + beta*review_score + gamma*exact_title_score
 
 def get_tile_from_url(url):
+    """Get tile from URL."""
     for product in products_data:
         if product["url"] == url:
             return product["title"]
 
 def get_description_from_url(url):
+    """Get description from URL."""
     for product in products_data:
         if product["url"] == url:
             return product["description"]
 
 # Search function
 def search(query):
+    """Search for products based on a query."""
     query_tokens = tokenize(query)
     expanded_query = expand_query(query_tokens, origin_synonyms)
     filtered_docs = filter_documents(description_index, expanded_query) + filter_documents(title_index, expanded_query)
